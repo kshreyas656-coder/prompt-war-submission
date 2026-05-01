@@ -99,7 +99,6 @@ class DemocracyQuestApp:
         SECURITY HACK: Multi-layer sanitization.
         Strips potentially dangerous characters using regex, then escapes HTML.
         """
-        # Strip out anything that looks like a script tag or command injection
         clean_text = re.sub(r'[<>{}[\]\\]', '', raw_text)
         return html.escape(clean_text).strip()
 
@@ -139,7 +138,7 @@ class DemocracyQuestApp:
                 cursor.execute("INSERT INTO leaderboard (player, score, language) VALUES (?, ?, ?)", 
                                ("Verified Citizen", score, language))
                 conn.commit()
-            self.fetch_leaderboard.clear() # Invalidate cache so new score shows
+            self.fetch_leaderboard.clear() 
         except sqlite3.Error as db_err:
             logger.error("Database write fault: %s", db_err)
 
@@ -151,6 +150,10 @@ class DemocracyQuestApp:
             st.session_state.current_stage = 1
             st.session_state.score = 0
             st.session_state.lang = self.selected_language
+            
+            # --- THE FIX: We force the list to exist BEFORE calling the API ---
+            st.session_state.messages = [] 
+            
             try:
                 prompt = self.get_system_prompt(self.selected_language)
                 response = st.session_state.chat_session.send_message(prompt)
@@ -158,7 +161,7 @@ class DemocracyQuestApp:
                 st.session_state.messages = [{"role": "assistant", "content": initial_msg}]
             except Exception as api_err:
                 logger.error("API transmission failed: %s", api_err)
-                st.error("Secure transmission failed. Please reload.")
+                st.session_state.messages = [{"role": "assistant", "content": "Welcome to DemocracyQuest! Please type 'Start' to begin."}]
 
     def run(self) -> None:
         """Main execution loop."""
@@ -178,7 +181,7 @@ class DemocracyQuestApp:
             st.bar_chart(chart_data, color="#138808", height=150)
             
             if len(st.session_state.get('messages', [])) > 1:
-                chat_df = pd.DataFrame(st.session_state.messages)
+                chat_df = pd.DataFrame(st.session_state.get('messages', []))
                 st.download_button(
                     label="Download Audit Trail (CSV)",
                     data=chat_df.to_csv(index=False),
@@ -196,7 +199,8 @@ class DemocracyQuestApp:
             st.progress(progress_val, text=f"Simulation Integrity: {progress_val}%")
             st.markdown("---")
 
-            for msg in st.session_state.messages:
+            # --- THE SECOND FIX: Safely retrieve messages without crashing ---
+            for msg in st.session_state.get("messages", []):
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
 
@@ -230,7 +234,7 @@ class DemocracyQuestApp:
                             st.session_state.messages.append({"role": "assistant", "content": clean_text})
                         except Exception as comm_err:
                             logger.error("Communication error: %s", comm_err)
-                            st.error("Encrypted connection lost.")
+                            st.error("Encrypted connection lost. Please type your message again.")
 
         with tab2:
             st.markdown("### 🏆 Hall of Citizens")
