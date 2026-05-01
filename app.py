@@ -31,7 +31,7 @@ Initialization: Introduce yourself in one sentence and ask if the user is ready 
 
 # Initialize the chat session
 if "chat_session" not in st.session_state:
-    model = genai.GenerativeModel('gemini-pro')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     st.session_state.chat_session = model.start_chat(history=[])
     # Send the hidden system prompt to start the game
     response = st.session_state.chat_session.send_message(SYSTEM_PROMPT)
