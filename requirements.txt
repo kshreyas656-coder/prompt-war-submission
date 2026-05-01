@@ -1,5 +1,7 @@
 streamlit
 google-generativeai
 pytest
+pytest-cov
 google-cloud-logging
 google-cloud-storage
+google-auth
