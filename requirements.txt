@@ -1,3 +1,5 @@
 streamlit
 google-generativeai
 pytest
+google-cloud-logging
+google-cloud-storage
